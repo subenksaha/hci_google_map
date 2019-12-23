@@ -47,8 +47,6 @@ export class NetService {
           socket.on('data', (data) => {
             var bread = socket.bytesRead;
             var bwrite = socket.bytesWritten;
-            console.log('Bytes read : ' + bread);
-            console.log('Bytes written : ' + bwrite);
             let json = JSON.parse(data.toString());
             this.ws.server.sockets.emit('sensor', json)
 

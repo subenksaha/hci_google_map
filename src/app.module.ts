@@ -1,16 +1,12 @@
 import { Module } from '@nestjs/common';
 import { NetService } from './net.service';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { WsService } from './ws.service';
+import { AppController } from './app.controller';
 
 @Module({
-  imports: [
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client'),
-    }),
-  ],
+  imports: [],
   controllers: [
+    AppController
   ],
   providers: [
     WsService,
