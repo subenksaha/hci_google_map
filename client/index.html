@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Google Map</title>
+    <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+  </head>
+<body>
+
+<div id="pano" style="width:100vw; height:100vh;"></div>
+<button id="connect">Connect Device</button>
+<style>
+  body {
+    margin: 0;
+  }
+  #connect {
+    bottom: 25px;
+    position: absolute;
+    margin: 0 auto;
+    left: 50%;
+    z-index: 1000;
+  }
+</style>
+<script>
+  var myPosition = {
+    lat: 42.345573,
+    lng: -71.098326
+  }
+  var myPov = {
+    heading: 0,
+    pitch: 0,
+    zoom: 1
+  }
+  var links = null;
+  var panorama = null;
+  var device =  null;
+
+  window.onload = function load() {
+
+    panorama = new google.maps.StreetViewPanorama(
+      document.getElementById('pano'), {
+        position: myPosition,
+        pov: myPov
+    });
+
+    panorama.addListener('pov_changed', function(ev) {
+      var cpov = panorama.getPov();
+      myPov = {
+        heading: cpov.heading,
+        pitch: cpov.pitch,
+        zoom: cpov.zoom
+      };
+
+    });
+
+    panorama.addListener('position_changed', function(ev) {
+      var cpos = panorama.getPosition()
+      var lat = cpos.lat();
+      var lng = cpos.lng();
+      myPosition = {
+        lat,
+        lng
+      }
+    });
+
+    panorama.addListener('links_changed', function() {
+      links = panorama.getLinks();
+    });
+
+    let socket = io();
+    socket.on("sensor", data => {
+      // let aX = data.ACCELEROMETER[0];
+      // let aY = data.ACCELEROMETER[1];
+      // let angle = Math.atan2(aX, aY)/(Math.PI/180);
+      let orientation = data['Orientation Sensor'];
+      myPov.heading = orientation[0];
+      myPov.pitch = -(orientation[1]);
+      panorama.setPov(myPov);
+    })
+
+  }
+  document
+    .getElementById('connect')
+    .onclick = function bluetoothSetup() {
+      navigator.usb.requestDevice({
+        filters: [{ services: [] }]
+      })
+        .then(device => {
+          device = device;
+          console.log(device);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+  }
+  window.onkeydown = function(ev) {
+    switch(ev.key) {
+      case 'a':
+        // move left
+        myPov.heading -= 0.2;
+        break;
+      case 'd':
+        // move right
+        myPov.heading += 0.2;
+        break;
+      case 'w':
+        // move up
+        myPov.pitch += 0.2;
+        break;
+      case 'x':
+        // move down
+        myPov.pitch -= 0.2;
+        break;
+      case 'q':
+        // go forward
+        panorama.setPano(links[1].pano);
+        break;
+      case 'z':
+        // go backward
+        panorama.setPano(links[0].pano);
+        break;
+    }
+    panorama.setPov(myPov)
+    panorama.setPosition(myPosition)
+  }
+
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGMQNjxnjMgPdtH38yyqQAd6kjsMy5CTA"></script>
+
+</body>
+</html>
